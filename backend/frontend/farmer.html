@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <title>Farmer Quick Capture — HerbTrace</title>
@@ -7,40 +8,173 @@
 
   <!-- Keep your original CSS palette & layout -->
   <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f1f8e9; margin: 0; }
-    nav { background: #2E8B57; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
-    .nav-container .logo { font-weight: bold; font-size: 1.5em; }
-    .nav-links { list-style: none; display: flex; gap: 15px; margin: 0; }
-    .nav-links li a { color: white; text-decoration: none; font-weight: 500; }
-    .nav-links li a:hover { text-decoration: underline; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f1f8e9;
+      margin: 0;
+    }
+
+    nav {
+      background: #2E8B57;
+      color: white;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-container .logo {
+      font-weight: bold;
+      font-size: 1.5em;
+    }
+
+    .nav-links {
+      list-style: none;
+      display: flex;
+      gap: 15px;
+      margin: 0;
+    }
+
+    .nav-links li a {
+      color: white;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .nav-links li a:hover {
+      text-decoration: underline;
+    }
 
     /* NEW: immutable farmer info bar */
-    .farmer-bar { background: #e8f5e9; border-bottom: 1px solid #cde4cf; color: #1f4d2f; }
-    .farmer-bar .wrap { max-width: 900px; margin: 0 auto; padding: 10px 20px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    .pill { background:#d6efd8; border:1px solid #b5dbb8; padding:6px 10px; border-radius:999px; font-weight:600; }
+    .farmer-bar {
+      background: #e8f5e9;
+      border-bottom: 1px solid #cde4cf;
+      color: #1f4d2f;
+    }
 
-    .container { max-width: 900px; margin: 30px auto; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-    h2 { color: #2E8B57; text-align: center; margin-bottom: 25px; }
-    .form-group { margin-bottom: 15px; }
-    .form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
-    .form-group input, .form-group select { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 1em; box-sizing: border-box; }
-    button { padding: 12px 20px; background: #2E8B57; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-    button:hover { background: #246b46; }
-    .batch-card { border-left: 4px solid #2E8B57; padding: 15px; margin: 15px 0; border-radius: 6px; background: #f7f9fb; }
-    .error { color: red; margin-bottom: 10px; font-weight: 500; }
-    .success { color: green; margin-bottom: 10px; font-weight: 500; }
+    .farmer-bar .wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 10px 20px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      background: #d6efd8;
+      border: 1px solid #b5dbb8;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 30px auto;
+      padding: 20px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      color: #2E8B57;
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 1em;
+      box-sizing: border-box;
+    }
+
+    button {
+      padding: 12px 20px;
+      background: #2E8B57;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #246b46;
+    }
+
+    .batch-card {
+      border-left: 4px solid #2E8B57;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 6px;
+      background: #f7f9fb;
+    }
+
+    .error {
+      color: red;
+      margin-bottom: 10px;
+      font-weight: 500;
+    }
+
+    .success {
+      color: green;
+      margin-bottom: 10px;
+      font-weight: 500;
+    }
 
     /* tiny helpers to fit your style */
-    .row { display: grid; grid-template-columns: 140px 1fr; gap: 8px; }
-    .inline { display: flex; gap: 10px; flex-wrap: wrap; }
-    .muted { color: #4b5a4b; font-size: 0.95em; }
-    .hidden { display: none; }
-    .preview-img { width: 120px; height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid #d9e3d9; }
+    .row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 8px;
+    }
+
+    .inline {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .muted {
+      color: #4b5a4b;
+      font-size: 0.95em;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .preview-img {
+      width: 120px;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid #d9e3d9;
+    }
   </style>
 
   <!-- EXIF parser to read timestamp & GPS from captured image -->
   <script src="https://unpkg.com/exifr/dist/full.umd.js"></script>
 </head>
+
 <body>
   <nav>
     <div class="nav-container">
@@ -94,10 +228,22 @@
       <div class="inline">
         <img id="thumb" class="preview-img" alt="preview" />
         <div>
-          <div class="row"><div><strong>Time</strong></div><div id="metaTime">—</div></div>
-          <div class="row"><div><strong>Latitude</strong></div><div id="metaLat">—</div></div>
-          <div class="row"><div><strong>Longitude</strong></div><div id="metaLong">—</div></div>
-          <div class="row"><div><strong>From EXIF?</strong></div><div id="metaExif">—</div></div>
+          <div class="row">
+            <div><strong>Time</strong></div>
+            <div id="metaTime">—</div>
+          </div>
+          <div class="row">
+            <div><strong>Latitude</strong></div>
+            <div id="metaLat">—</div>
+          </div>
+          <div class="row">
+            <div><strong>Longitude</strong></div>
+            <div id="metaLong">—</div>
+          </div>
+          <div class="row">
+            <div><strong>From EXIF?</strong></div>
+            <div id="metaExif">—</div>
+          </div>
         </div>
       </div>
     </div>
@@ -109,20 +255,38 @@
   </div>
 
   <script>
-    // ===== Immutable Farmer Data (shown + sent every submit) =====
-    const IMMUTABLE_FARMER_NAME = "Gurpreet Singh";
-    const IMMUTABLE_FARM_LOCATION = "Moga, Punjab";
+    // ===== Dynamic Farmer Data =====
+    let currentFarmerName = "Unknown Farmer";
+    let currentFarmLocation = "Unknown Location";
 
     // Auth gate (matches your backend: /login route serves login.html)
-    (function ensureAuth(){
+    (async function initApp() {
       const token = localStorage.getItem('token');
-      if (!token) window.location.href = '/login';
-      // Render immutable labels (just in case you change constants above)
-      document.getElementById('farmerName').textContent = IMMUTABLE_FARMER_NAME;
-      document.getElementById('farmLocation').textContent = IMMUTABLE_FARM_LOCATION;
+      if (!token) {
+        window.location.href = '/login';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/profile', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+
+        if (data.ok && data.profile) {
+          currentFarmerName = data.profile.fullName || 'Unknown Farmer';
+          currentFarmLocation = data.profile.location || 'Unknown Location';
+        }
+      } catch (e) {
+        console.error("Failed to load profile", e);
+      }
+
+      // Render profile labels dynamically
+      document.getElementById('farmerName').textContent = currentFarmerName;
+      document.getElementById('farmLocation').textContent = currentFarmLocation;
     })();
 
-    function logout(){
+    function logout() {
       localStorage.clear();
       window.location.href = '/login';
     }
@@ -131,21 +295,21 @@
       const token = localStorage.getItem('token');
       return token ? { 'Authorization': `Bearer ${token}` } : {};
     }
-    function showMsg(html, type='') {
+    function showMsg(html, type = '') {
       document.getElementById('message').innerHTML = `<div class="${type}">${html}</div>`;
     }
 
     // d/m/s to decimal degrees
-    function dmsToDecimal(dms, ref){
+    function dmsToDecimal(dms, ref) {
       if (!dms) return null;
       const [deg, min, sec] = dms;
-      let dec = deg + (min/60) + (sec/3600);
+      let dec = deg + (min / 60) + (sec / 3600);
       if (ref === 'S' || ref === 'W') dec = -dec;
       return dec;
     }
 
     // geolocation fallback (if EXIF GPS is missing)
-    function getBrowserLocation(timeoutMs = 8000){
+    function getBrowserLocation(timeoutMs = 8000) {
       return new Promise((resolve) => {
         if (!navigator.geolocation) return resolve(null);
         navigator.geolocation.getCurrentPosition(
@@ -158,27 +322,27 @@
 
     // Elements
     const speciesSel = document.getElementById('species');
-    const otherWrap  = document.getElementById('otherSpeciesWrap');
+    const otherWrap = document.getElementById('otherSpeciesWrap');
     const otherInput = document.getElementById('otherSpecies');
 
-    const camera    = document.getElementById('camera');
-    const preview   = document.getElementById('previewCard');
-    const thumb     = document.getElementById('thumb');
+    const camera = document.getElementById('camera');
+    const preview = document.getElementById('previewCard');
+    const thumb = document.getElementById('thumb');
 
-    const metaTime  = document.getElementById('metaTime');
-    const metaLat   = document.getElementById('metaLat');
-    const metaLong  = document.getElementById('metaLong');
-    const metaExif  = document.getElementById('metaExif');
+    const metaTime = document.getElementById('metaTime');
+    const metaLat = document.getElementById('metaLat');
+    const metaLong = document.getElementById('metaLong');
+    const metaExif = document.getElementById('metaExif');
 
-    const btnSave   = document.getElementById('btnSave');
-    const btnReset  = document.getElementById('btnReset');
+    const btnSave = document.getElementById('btnSave');
+    const btnReset = document.getElementById('btnReset');
 
     speciesSel.addEventListener('change', () => {
       otherWrap.classList.toggle('hidden', speciesSel.value !== 'other');
     });
 
     let chosenFile = null;
-    let extracted  = { timestamp: null, lat: null, long: null, exifPresent: false };
+    let extracted = { timestamp: null, lat: null, long: null, exifPresent: false };
 
     camera.addEventListener('change', async (e) => {
       const file = e.target.files[0];
@@ -197,13 +361,13 @@
         const output = await exifr.parse(file, { gps: true, tiff: true, ifd0: true, exif: true });
 
         const exifTime = output?.DateTimeOriginal || output?.CreateDate || output?.ModifyDate;
-        const lat      = dmsToDecimal(output?.GPSLatitude, output?.GPSLatitudeRef);
-        const long     = dmsToDecimal(output?.GPSLongitude, output?.GPSLongitudeRef);
+        const lat = dmsToDecimal(output?.GPSLatitude, output?.GPSLatitudeRef);
+        const long = dmsToDecimal(output?.GPSLongitude, output?.GPSLongitudeRef);
 
         extracted.exifPresent = Boolean(exifTime || (lat && long));
-        extracted.timestamp   = exifTime ? new Date(exifTime).toISOString() : null;
-        extracted.lat         = lat ?? null;
-        extracted.long        = long ?? null;
+        extracted.timestamp = exifTime ? new Date(exifTime).toISOString() : null;
+        extracted.lat = lat ?? null;
+        extracted.long = long ?? null;
 
         // Fallback to browser geolocation if GPS not present
         if (extracted.lat == null || extracted.long == null) {
@@ -220,7 +384,7 @@
 
         // Render metadata
         metaTime.textContent = new Date(extracted.timestamp).toLocaleString();
-        metaLat.textContent  = extracted.lat ?? '—';
+        metaLat.textContent = extracted.lat ?? '—';
         metaLong.textContent = extracted.long ?? '—';
         metaExif.textContent = extracted.exifPresent ? 'Yes' : 'Partially/No (fallback)';
 
@@ -234,7 +398,7 @@
         extracted.timestamp = new Date().toISOString();
 
         metaTime.textContent = new Date(extracted.timestamp).toLocaleString();
-        metaLat.textContent  = extracted.lat ?? '—';
+        metaLat.textContent = extracted.lat ?? '—';
         metaLong.textContent = extracted.long ?? '—';
         metaExif.textContent = 'No (fallback)';
 
@@ -265,11 +429,11 @@
         fd.append('species', species);
         if (species === 'other') fd.append('otherSpecies', (otherInput.value || 'Unknown'));
 
-        // Append immutable farmer details for on-chain storage
-        fd.append('collector', IMMUTABLE_FARMER_NAME);      // your backend already stores 'collector'
-        fd.append('farmLocation', IMMUTABLE_FARM_LOCATION); // small backend tweak to persist this (see note)
+        // Append dynamic farmer details for on-chain storage
+        fd.append('collector', currentFarmerName);      // your backend already stores 'collector'
+        fd.append('farmLocation', currentFarmLocation); // small backend tweak to persist this (see note)
 
-        if (extracted.lat != null)  fd.append('lat',  String(extracted.lat));
+        if (extracted.lat != null) fd.append('lat', String(extracted.lat));
         if (extracted.long != null) fd.append('long', String(extracted.long));
         // Optional extras
         fd.append('timestamp', extracted.timestamp);
@@ -305,4 +469,5 @@
     });
   </script>
 </body>
+
 </html>

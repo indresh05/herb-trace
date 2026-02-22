@@ -161,6 +161,25 @@ function authRole(roles) {
   };
 }
 
+// ---------- Profile ----------
+app.get('/api/profile', authRole(['farmer', 'processor', 'lab']), async (req, res) => {
+  try {
+    const userProfile = await db.Profile.findOne({ where: { userId: req.user.id } });
+    if (!userProfile) return res.status(404).json({ ok: false, error: 'Profile not found' });
+    res.json({
+      ok: true,
+      profile: {
+        fullName: userProfile.fullName,
+        location: userProfile.location,
+        facilityName: userProfile.facilityName
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Failed to fetch profile' });
+  }
+});
+
 // ---------- Farmer ----------
 app.post('/api/farmer/add-herb', authRole(['farmer']), upload.single('image'), async (req, res) => {
   try {
@@ -216,10 +235,39 @@ app.post('/api/farmer/add-herb', authRole(['farmer']), upload.single('image'), a
 
 // ---------- Processor ----------
 app.get('/api/processor/dashboard', authRole(['processor']), async (req, res) => {
-  // In a real Fabric app, we'd use CouchDB rich queries or an indexer.
-  // Since this is a prototype, we return empty pending and expect the processor 
-  // to manually input the raw batch ID on their dashboard.
-  res.json({ ok: true, pending: [] });
+  try {
+    console.log(`[PROCESSOR] Fetching batches for ${req.user.username}...`);
+    const allBatchesJSON = await fabricGateway.evaluateTransaction(req.user.fabricIdentity, req.user.organizationId, 'GetAllBatches');
+    console.log(`[PROCESSOR] Raw JSON from chaincode:`, allBatchesJSON);
+
+    const allBatches = JSON.parse(allBatchesJSON);
+    console.log(`[PROCESSOR] Parsed events:`, allBatches.length);
+
+    // Filter for batches that have a collection event but NO processing event
+    const pending = allBatches
+      .map(b => b.Record)
+      .filter(events => {
+        const hasCollection = events.some(e => e.type === 'collection');
+        const hasProcessing = events.some(e => e.type === 'processing');
+        return hasCollection && !hasProcessing;
+      })
+      .map(events => {
+        // Flatten latest state for dashboard display
+        const collectionEvent = events.find(e => e.type === 'collection');
+        return {
+          batchId: collectionEvent.batchId,
+          species: collectionEvent.species,
+          quality: collectionEvent.quality,
+          status: collectionEvent.status
+        }
+      });
+
+    console.log(`[PROCESSOR] Filtered pending:`, pending);
+    res.json({ ok: true, pending });
+  } catch (err) {
+    console.error('Failed to get processor dashboard batches:', err);
+    res.status(500).json({ ok: false, error: 'Failed to fetch batches', pending: [] });
+  }
 });
 
 app.post('/api/processor/process', authRole(['processor']), async (req, res) => {
@@ -258,7 +306,35 @@ app.post('/api/processor/process', authRole(['processor']), async (req, res) => 
 
 // ---------- Lab ----------
 app.get('/api/lab/dashboard', authRole(['lab']), async (req, res) => {
-  res.json({ ok: true, pending: [] });
+  try {
+    const allBatchesJSON = await fabricGateway.evaluateTransaction(req.user.fabricIdentity, req.user.organizationId, 'GetAllBatches');
+    const allBatches = JSON.parse(allBatchesJSON);
+
+    // Filter for batches that have a processing event but NO quality event
+    const pending = allBatches
+      .map(b => b.Record)
+      .filter(events => {
+        const hasProcessing = events.some(e => e.type === 'processing');
+        const hasQuality = events.some(e => e.type === 'quality');
+        return hasProcessing && !hasQuality;
+      })
+      .map(events => {
+        // Flatten latest state for dashboard display
+        const collectionEvent = events.find(e => e.type === 'collection');
+        const processingEvent = events.find(e => e.type === 'processing');
+        return {
+          batchId: collectionEvent.batchId,
+          species: collectionEvent.species,
+          status: processingEvent.status, // Should be 'processed'
+          processor: processingEvent.processor
+        }
+      });
+
+    res.json({ ok: true, pending });
+  } catch (err) {
+    console.error('Failed to get lab dashboard batches:', err);
+    res.status(500).json({ ok: false, error: 'Failed to fetch batches', pending: [] });
+  }
 });
 
 app.post('/api/lab/upload-report', authRole(['lab']), upload.single('file'), async (req, res) => {

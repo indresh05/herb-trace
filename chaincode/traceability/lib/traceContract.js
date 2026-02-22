@@ -130,6 +130,29 @@ class TraceContract extends Contract {
         return buffer.toString();
     }
 
+    // Helper function to get all batches for dashboards
+    async GetAllBatches(ctx) {
+        console.info('============= START : GetAllBatches ===========');
+        const allResults = [];
+        const iterator = await ctx.stub.getStateByRange('', '');
+        let result = await iterator.next();
+        while (!result.done) {
+            const strValue = Buffer.from(result.value.value.toString('utf8')).toString('utf8');
+            let record;
+            try {
+                record = JSON.parse(strValue);
+            } catch (err) {
+                console.log(err);
+                record = strValue;
+            }
+            allResults.push({ Key: result.value.key, Record: record });
+            result = await iterator.next();
+        }
+        await iterator.close();
+        console.info('============= END : GetAllBatches ===========');
+        return JSON.stringify(allResults);
+    }
+
     // Helper function
     async BatchExists(ctx, batchId) {
         const buffer = await ctx.stub.getState(batchId);

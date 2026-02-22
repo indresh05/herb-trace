@@ -1,6 +1,7 @@
 require('dotenv').config();
 const db = require('./models');
 const bcrypt = require('bcryptjs');
+const caHelper = require('./caHelper'); // Added 
 
 async function seed() {
     console.log("Connecting to database to seed default users...");
@@ -9,13 +10,16 @@ async function seed() {
     // Default Farmer
     const farmerExists = await db.User.findOne({ where: { username: 'farmer1' } });
     if (!farmerExists) {
-        const hash = await bcrypt.hash('1234', 12);
+        console.log("Enrolling farmer1 in Fabric CA...");
+        const caRes = await caHelper.registerAndEnrollUser('farmer1', 'farmer');
+
+        const hash = await bcrypt.hash('password123', 12);
         const farmer = await db.User.create({
             username: 'farmer1',
             passwordHash: hash,
             role: 'farmer',
-            organizationId: 'Org1MSP',
-            fabricIdentity: 'appUser'
+            organizationId: caRes.mspId,
+            fabricIdentity: 'farmer1'
         });
         await db.Profile.create({
             userId: farmer.id,
@@ -29,13 +33,16 @@ async function seed() {
     // Default Processor
     const processorExists = await db.User.findOne({ where: { username: 'processor1' } });
     if (!processorExists) {
-        const hash = await bcrypt.hash('1234', 12);
+        console.log("Enrolling processor1 in Fabric CA...");
+        const caRes = await caHelper.registerAndEnrollUser('processor1', 'processor');
+
+        const hash = await bcrypt.hash('password123', 12);
         const processor = await db.User.create({
             username: 'processor1',
             passwordHash: hash,
             role: 'processor',
-            organizationId: 'Org1MSP',
-            fabricIdentity: 'appUser'
+            organizationId: caRes.mspId,
+            fabricIdentity: 'processor1'
         });
         await db.Profile.create({
             userId: processor.id,
@@ -49,13 +56,16 @@ async function seed() {
     // Default Lab
     const labExists = await db.User.findOne({ where: { username: 'lab1' } });
     if (!labExists) {
-        const hash = await bcrypt.hash('1234', 12);
+        console.log("Enrolling lab1 in Fabric CA...");
+        const caRes = await caHelper.registerAndEnrollUser('lab1', 'lab');
+
+        const hash = await bcrypt.hash('password123', 12);
         const lab = await db.User.create({
             username: 'lab1',
             passwordHash: hash,
             role: 'lab',
-            organizationId: 'Org1MSP',
-            fabricIdentity: 'appUser'
+            organizationId: caRes.mspId,
+            fabricIdentity: 'lab1'
         });
         await db.Profile.create({
             userId: lab.id,
