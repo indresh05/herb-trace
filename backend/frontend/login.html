@@ -146,6 +146,7 @@
     &copy; 2025 HerbTrace. All rights reserved.
   </footer>
 
+  <script src="/config.js"></script>
   <script>
     let isLoginMode = true;
 
@@ -189,7 +190,7 @@
       }
 
       try {
-        const res = await fetch('/api/register', {
+        const res = await fetch(CONFIG.API_BASE_URL + '/api/register', {
           method: 'POST',
           headers: { 'Content-Type':'application/json' },
           body: JSON.stringify({ username, password, role, fullName, location, facilityName })
@@ -222,7 +223,7 @@
       }
 
       try {
-        const res = await fetch('/api/login', {
+        const res = await fetch(CONFIG.API_BASE_URL + '/api/login', {
           method: 'POST',
           headers: { 'Content-Type':'application/json' },
           body: JSON.stringify({ username, password })

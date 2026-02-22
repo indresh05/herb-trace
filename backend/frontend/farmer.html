@@ -172,6 +172,7 @@
   </style>
 
   <!-- EXIF parser to read timestamp & GPS from captured image -->
+  <script src="/config.js"></script>
   <script src="https://unpkg.com/exifr/dist/full.umd.js"></script>
 </head>
 
@@ -254,6 +255,7 @@
     </div>
   </div>
 
+  <script src="/config.js"></script>
   <script>
     // ===== Dynamic Farmer Data =====
     let currentFarmerName = "Unknown Farmer";
@@ -268,7 +270,7 @@
       }
 
       try {
-        const res = await fetch('/api/profile', {
+        const res = await fetch(CONFIG.API_BASE_URL + '/api/profile', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
@@ -442,7 +444,7 @@
         // Attach image file under field name 'image' (multer reads this)
         fd.append('image', chosenFile, chosenFile.name || 'photo.jpg');
 
-        const resp = await fetch('/api/farmer/add-herb', {
+        const resp = await fetch(CONFIG.API_BASE_URL + '/api/farmer/add-herb', {
           method: 'POST',
           headers: { ...authHeader() }, // Do not set Content-Type manually for FormData
           body: fd

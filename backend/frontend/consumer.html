@@ -48,6 +48,7 @@
     <div id="batchDetails" style="margin-top: 20px;"></div>
   </div>
 
+  <script src="/config.js"></script>
   <script>
     async function viewBatch() {
       const batchId = document.getElementById('batchIdInput').value.trim();
@@ -56,7 +57,7 @@
 
       if (!batchId) return alert('Please enter a Batch ID');
 
-      const res = await fetch(`/api/consumer/view?batchId=${batchId}`);
+      const res = await fetch(CONFIG.API_BASE_URL + `/api/consumer/view?batchId=${batchId}`);
       const data = await res.json();
 
       if (data.ok && data.events.length > 0) {

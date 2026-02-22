@@ -69,11 +69,12 @@
     <div id="qrResult"></div>
   </div>
 
+  <script src="/config.js"></script>
   <script>
     async function generateQR() {
       const batchId = document.getElementById('batchId').value.trim();
       if(!batchId) return alert('Enter batch ID');
-      const res = await fetch(`/qr/${batchId}`);
+      const res = await fetch(CONFIG.API_BASE_URL + `/qr/${batchId}`);
       const html = await res.text();
       document.getElementById('qrResult').innerHTML = html;
     }
