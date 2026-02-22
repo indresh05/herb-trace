@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: herbtrace-postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: enterprise_password
+      POSTGRES_DB: herbtrace
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

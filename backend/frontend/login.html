@@ -111,9 +111,10 @@
   </nav>
 
   <div class="login-container">
-    <h2>Login to HerbTrace</h2>
-    <p class="info-text">Select your role and enter credentials to access your dashboard.</p>
+    <h2 id="formTitle">Login to HerbTrace</h2>
+    <p class="info-text" id="formSubtitle">Select your role and enter credentials to access your dashboard.</p>
     <div class="error" id="error"></div>
+    <div style="color: green; text-align: center; margin-bottom: 15px; font-weight: bold;" id="successMsg"></div>
 
     <!-- Role selector -->
     <select id="role" required>
@@ -123,9 +124,22 @@
       <option value="lab">Lab Manager</option>
     </select>
 
+    <!-- Registration Fields (Hidden by default) -->
+    <div id="registerFields" style="display: none;">
+      <input type="text" id="fullName" placeholder="Full Name (e.g., Gurpreet Singh)">
+      <input type="text" id="location" placeholder="Location (e.g., Moga, Punjab)">
+      <input type="text" id="facilityName" placeholder="Facility Name (e.g., Singh Farms)">
+    </div>
+
+    <!-- Auth Fields -->
     <input type="text" id="username" placeholder="Username">
     <input type="password" id="password" placeholder="Password">
-    <button onclick="login()">Login</button>
+    
+    <button id="submitBtn" onclick="submitForm()">Login</button>
+    
+    <div style="margin-top: 20px; font-size: 0.9em;">
+      <a href="#" id="toggleAuthMode" style="color: #2E8B57; text-decoration: none; font-weight: 500;" onclick="toggleMode(event)">Need an account? Register</a>
+    </div>
   </div>
 
   <footer>
@@ -133,36 +147,103 @@
   </footer>
 
   <script>
+    let isLoginMode = true;
+
+    function toggleMode(e) {
+      e.preventDefault();
+      isLoginMode = !isLoginMode;
+      
+      document.getElementById('formTitle').textContent = isLoginMode ? 'Login to HerbTrace' : 'Register Account';
+      document.getElementById('formSubtitle').textContent = isLoginMode ? 'Select your role and enter credentials to access your dashboard.' : 'Deploy a new enterprise blockchain identity.';
+      document.getElementById('submitBtn').textContent = isLoginMode ? 'Login' : 'Register';
+      document.getElementById('toggleAuthMode').textContent = isLoginMode ? 'Need an account? Register' : 'Already have an account? Login';
+      document.getElementById('registerFields').style.display = isLoginMode ? 'none' : 'block';
+      document.getElementById('error').textContent = '';
+      document.getElementById('successMsg').textContent = '';
+    }
+
+    async function submitForm() {
+      if (isLoginMode) {
+        await login();
+      } else {
+        await register();
+      }
+    }
+
+    async function register() {
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const role = document.getElementById('role').value;
+      const fullName = document.getElementById('fullName').value;
+      const location = document.getElementById('location').value;
+      const facilityName = document.getElementById('facilityName').value;
+      const errorDiv = document.getElementById('error');
+      const successDiv = document.getElementById('successMsg');
+
+      errorDiv.textContent = '';
+      successDiv.textContent = '';
+
+      if (!role || !username || !password || !fullName || !location) {
+        errorDiv.textContent = 'Please fill out all required fields';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json' },
+          body: JSON.stringify({ username, password, role, fullName, location, facilityName })
+        });
+
+        const data = await res.json();
+        if (data.ok) {
+          successDiv.textContent = 'Identity registered to Database! Please login.';
+          // Automatically toggle back to login mode so they can type the password and login
+          setTimeout(() => document.getElementById('toggleAuthMode').click(), 2000);
+        } else {
+          errorDiv.textContent = data.error || 'Registration failed';
+        }
+      } catch (err) {
+        errorDiv.textContent = 'Server error during registration';
+      }
+    }
+
     async function login() {
       const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
       const role = document.getElementById('role').value;
       const errorDiv = document.getElementById('error');
+      
+      errorDiv.textContent = '';
 
       if (!role) {
         errorDiv.textContent = 'Please select a role';
         return;
       }
 
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type':'application/json' },
-        body: JSON.stringify({ username, password })
-      });
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json' },
+          body: JSON.stringify({ username, password })
+        });
 
-      const data = await res.json();
-      if (data.ok) {
-        if (data.role !== role) {
-          errorDiv.textContent = `Role mismatch. Your assigned role is "${data.role}"`;
-          return;
+        const data = await res.json();
+        if (data.ok) {
+          if (data.role !== role) {
+            errorDiv.textContent = `Role mismatch. Your assigned role is "${data.role}"`;
+            return;
+          }
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('role', data.role);
+          if (data.role === 'farmer') window.location.href = 'farmer.html';
+          else if (data.role === 'processor') window.location.href = 'processor.html';
+          else if (data.role === 'lab') window.location.href = 'lab.html';
+        } else {
+          errorDiv.textContent = data.error || "Invalid credentials";
         }
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('role', data.role);
-        if (data.role === 'farmer') window.location.href = 'farmer.html';
-        else if (data.role === 'processor') window.location.href = 'processor.html';
-        else if (data.role === 'lab') window.location.href = 'lab.html';
-      } else {
-        errorDiv.textContent = data.error;
+      } catch (err) {
+        errorDiv.textContent = 'Server error during login';
       }
     }
   </script>
