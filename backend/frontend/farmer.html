@@ -172,7 +172,7 @@
   </style>
 
   <!-- EXIF parser to read timestamp & GPS from captured image -->
-  <script src="/config.js"></script>
+  <script src="./config.js"></script>
   <script src="https://unpkg.com/exifr/dist/full.umd.js"></script>
 </head>
 
@@ -255,7 +255,7 @@
     </div>
   </div>
 
-  <script src="/config.js"></script>
+  <script src="./config.js"></script>
   <script>
     // ===== Dynamic Farmer Data =====
     let currentFarmerName = "Unknown Farmer";
@@ -265,13 +265,13 @@
     (async function initApp() {
       const token = localStorage.getItem('token');
       if (!token) {
-        window.location.href = '/login';
+        window.location.href = '/login.html';
         return;
       }
 
       try {
         const res = await fetch(CONFIG.API_BASE_URL + '/api/profile', {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: {  'Authorization': `Bearer ${token}`,  }
         });
         const data = await res.json();
 
@@ -290,12 +290,13 @@
 
     function logout() {
       localStorage.clear();
-      window.location.href = '/login';
+      window.location.href = '/login.html';
     }
 
     function authHeader() {
       const token = localStorage.getItem('token');
-      return token ? { 'Authorization': `Bearer ${token}` } : {};
+      return token ? { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' } : { 'ngrok-skip-browser-warning': 'true' };
+    }`,  } : {};
     }
     function showMsg(html, type = '') {
       document.getElementById('message').innerHTML = `<div class="${type}">${html}</div>`;
@@ -446,7 +447,7 @@
 
         const resp = await fetch(CONFIG.API_BASE_URL + '/api/farmer/add-herb', {
           method: 'POST',
-          headers: { ...authHeader() }, // Do not set Content-Type manually for FormData
+          headers: {  ...authHeader() }, // Do not set Content-Type manually for FormData
           body: fd
         });
         const data = await resp.json();

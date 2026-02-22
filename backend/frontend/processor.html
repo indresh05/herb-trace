@@ -58,7 +58,7 @@
     <button id="btnProcess">Process Batch</button>
   </div>
 
-  <script src="/config.js"></script>
+  <script src="./config.js"></script>
   <script>
     const token = localStorage.getItem('token');
     if (!token) window.location.href = 'login.html';
@@ -86,7 +86,7 @@
     }
 
     async function loadBatches() {
-      const res = await fetch(CONFIG.API_BASE_URL + '/api/processor/dashboard', { headers: { 'Authorization': `Bearer ${token}` } });
+      const res = await fetch(CONFIG.API_BASE_URL + '/api/processor/dashboard', { headers: {  'Authorization': `Bearer ${token}`,  } });
       const data = await res.json();
       const container = document.getElementById('batches');
       const selectBatch = document.getElementById('batchId');
@@ -131,7 +131,7 @@
 
       const res = await fetch(CONFIG.API_BASE_URL + '/api/processor/process', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: {  'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`,  },
         body: JSON.stringify(body)
       });
       const data = await res.json();
