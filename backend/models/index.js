@@ -21,6 +21,7 @@ db.sequelize = sequelize;
 // Load Models
 db.User = require('./User')(sequelize, Sequelize);
 db.Profile = require('./Profile')(sequelize, Sequelize);
+db.Batch = require('./Batch')(sequelize, Sequelize);
 
 // Define Relationships
 db.User.hasOne(db.Profile, {

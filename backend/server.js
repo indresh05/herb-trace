@@ -506,4 +506,9 @@ app.get('/qr/:batchId', async (req, res) => {
 
 // ---------- Start ----------
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+if (require.main === module) {
+  app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+} else {
+  // Export the app for Vercel serverless
+  module.exports = app;
+}
