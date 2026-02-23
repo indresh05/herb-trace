@@ -190,8 +190,8 @@
   <!-- NEW: immutable farmer info bar -->
   <div class="farmer-bar">
     <div class="wrap">
-      <span class="pill">Farmer: <span id="farmerName">Gurpreet Singh</span></span>
-      <span class="pill">Farm Location: <span id="farmLocation">Moga, Punjab</span></span>
+      <span class="pill">Farmer: <span id="farmerName">Loading...</span></span>
+      <span class="pill">Farm Location: <span id="farmLocation">Loading...</span></span>
       <span class="muted">These details are fixed and will be sent with every submission.</span>
     </div>
   </div>
@@ -296,7 +296,6 @@
     function authHeader() {
       const token = localStorage.getItem('token');
       return token ? { 'Authorization': `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' } : { 'ngrok-skip-browser-warning': 'true' };
-    }`,  } : {};
     }
     function showMsg(html, type = '') {
       document.getElementById('message').innerHTML = `<div class="${type}">${html}</div>`;
