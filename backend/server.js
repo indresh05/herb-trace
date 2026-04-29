@@ -16,7 +16,11 @@ const cors = require('cors');
 const fabricGateway = require('./fabricGateway');
 
 let pinataHelper = null;
-try { pinataHelper = require('./pinataHelper'); } catch (e) { /* optional */ }
+try { 
+  pinataHelper = require('./pinataHelper'); 
+} catch (e) { 
+  console.error('Critical: Failed to load pinataHelper. IPFS uploads will be disabled.', e.message); 
+}
 
 const app = express();
 const upload = multer({ dest: 'uploads/' });
@@ -186,6 +190,7 @@ app.get('/api/profile', authRole(['farmer', 'processor', 'lab']), async (req, re
 
 // ---------- Farmer ----------
 app.post('/api/farmer/add-herb', authRole(['farmer']), upload.single('image'), async (req, res) => {
+  console.log('--- New Harvest Registration Request ---');
   try {
     const { species, otherSpecies, quality, lat, long } = req.body;
     let herb = species;
@@ -196,8 +201,12 @@ app.post('/api/farmer/add-herb', authRole(['farmer']), upload.single('image'), a
     let imageLink = null;
     if (req.file && pinataHelper) {
       try {
+        console.log('Uploading image to IPFS via Pinata...');
         const hash = await pinataHelper.uploadFile(req.file.path);
-        if (hash) imageLink = `https://gateway.pinata.cloud/ipfs/${hash}`;
+        if (hash) {
+          imageLink = `https://gateway.pinata.cloud/ipfs/${hash}`;
+          console.log('IPFS Upload Success:', imageLink);
+        }
       } catch (e) { console.error('IPFS image upload failed', e); }
     }
     if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);

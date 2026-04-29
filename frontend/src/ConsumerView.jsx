@@ -100,6 +100,29 @@ const TraceNode = ({ event, isLast }) => {
           ))}
         </div>
 
+        {event.imageLink && event.type === 'collection' && (
+          <div className="mt-8 relative group">
+            <p className="text-[10px] font-bold text-herb-charcoal/40 uppercase tracking-widest mb-4">Harvest Documentation</p>
+            <div className="relative overflow-hidden rounded-2xl border border-herb-deep/5 aspect-video sm:aspect-[21/9]">
+              <img 
+                src={event.imageLink} 
+                alt="Harvest Documentation" 
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-herb-deep/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
+                <a 
+                  href={event.imageLink} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="bg-white/90 backdrop-blur-sm text-herb-deep px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg"
+                >
+                  <ExternalLink className="w-4 h-4" /> View Original IPFS Image
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+
         {event.blockchainProof && (
           <div className="mt-8 pt-6 border-t border-herb-deep/5 flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-x-8 gap-y-4 text-[10px]">

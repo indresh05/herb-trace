@@ -1,8 +1,8 @@
 const pinataSDK = require('@pinata/sdk');
 const fs = require('fs');
 
-// Your Pinata keys
-const pinata = pinataSDK('165493573476647f55bd', '20c0a97817f016825e71c8738c0a05c75ed7a307cb1292865dc00582fb7d1f4d');
+// Your Pinata keys from .env
+const pinata = pinataSDK(process.env.PINATA_API_KEY, process.env.PINATA_SECRET_API_KEY);
 
 /**
  * Upload any file (PDF, image, etc.) to Pinata
