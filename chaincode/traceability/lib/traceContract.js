@@ -119,6 +119,26 @@ class TraceContract extends Contract {
         return JSON.stringify(eventsList);
     }
 
+    // Helper to store blockchain proofs AFTER a transaction commits
+    async UpdateBatchProof(ctx, batchId, proofStr) {
+        console.info('============= START : UpdateBatchProof ===========');
+        const exists = await this.BatchExists(ctx, batchId);
+        if (!exists) throw new Error(`The batch ${batchId} does not exist`);
+
+        const buffer = await ctx.stub.getState(batchId);
+        const eventsList = JSON.parse(buffer.toString());
+
+        if (eventsList.length === 0) throw new Error(`No events to update in batch ${batchId}`);
+
+        // Update the most recent event with its blockchain proof
+        const proof = JSON.parse(proofStr);
+        eventsList[eventsList.length - 1].blockchainProof = proof;
+
+        await ctx.stub.putState(batchId, Buffer.from(JSON.stringify(eventsList)));
+        console.info('============= END : UpdateBatchProof ===========');
+        return JSON.stringify(eventsList);
+    }
+
     // Consumer (or anyone) reads the batch history
     async GetBatchHistory(ctx, batchId) {
         const exists = await this.BatchExists(ctx, batchId);

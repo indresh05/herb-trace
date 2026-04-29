@@ -9,6 +9,7 @@ const multer = require('multer');
 const bcrypt = require('bcryptjs'); // make sure to install via npm
 const jwt = require('jsonwebtoken');
 const QRCode = require('qrcode');
+const crypto = require('crypto');
 const cors = require('cors');
 
 // NEW: Import the Fabric Gateway helper
@@ -52,12 +53,15 @@ function hasGeo(e) {
 // (Removed Hardcoded Profiles & Users)
 
 // ---------- Serve Frontend ----------
-const FRONTEND_PATH = path.join(__dirname, 'frontend');
+const FRONTEND_PATH = path.join(__dirname, '../frontend/dist');
 app.use(express.static(FRONTEND_PATH));
-app.get('/', (req, res) => res.sendFile(path.join(FRONTEND_PATH, 'index.html')));
-app.get('/login', (req, res) => res.sendFile(path.join(FRONTEND_PATH, 'login.html')));
-app.get('/consumer', (req, res) => res.sendFile(path.join(FRONTEND_PATH, 'consumer.html')));
-app.get('/qr', (req, res) => res.sendFile(path.join(FRONTEND_PATH, 'qr.html')));
+
+// Single Page Application Routing: Redirect all unknown routes to index.html
+app.get('*', (req, res, next) => {
+  // If it's an API request, let it fall through
+  if (req.path.startsWith('/api')) return next();
+  res.sendFile(path.join(FRONTEND_PATH, 'index.html'));
+});
 
 // ---------- Auth Endpoints ----------
 app.post('/api/register', async (req, res) => {
@@ -218,15 +222,17 @@ app.post('/api/farmer/add-herb', authRole(['farmer']), upload.single('image'), a
     };
 
     // ---------- Real On-chain Fabric txn (Farmer) ----------
+    let txResponse;
     try {
-      await fabricGateway.invokeTransaction(req.user.fabricIdentity, req.user.organizationId, 'CreateBatch', batchId, JSON.stringify(event));
+      event.payloadHash = crypto.createHash('sha256').update(JSON.stringify(event)).digest('hex');
+      txResponse = await fabricGateway.invokeTransaction(req.user.fabricIdentity, req.user.organizationId, 'CreateBatch', batchId, JSON.stringify(event));
       console.log(`Fabric Transaction Successful: CreateBatch for ${batchId}`);
     } catch (err) {
       console.error('Fabric transaction failed (farmer)', err);
       return res.status(500).json({ ok: false, error: 'Blockchain transaction failed' });
     }
 
-    res.json({ ok: true, batchId, event });
+    res.json({ ok: true, batchId, event, blockchainProof: txResponse.proof });
   } catch (err) {
     console.error(err);
     res.status(500).json({ ok: false, error: 'Server error' });
@@ -293,15 +299,17 @@ app.post('/api/processor/process', authRole(['processor']), async (req, res) => 
   };
 
   // ---------- Real On-chain Fabric txn (Processor) ----------
+  let txResponse;
   try {
-    await fabricGateway.invokeTransaction(req.user.fabricIdentity, req.user.organizationId, 'ProcessBatch', batchId, JSON.stringify(event));
+    event.payloadHash = crypto.createHash('sha256').update(JSON.stringify(event)).digest('hex');
+    txResponse = await fabricGateway.invokeTransaction(req.user.fabricIdentity, req.user.organizationId, 'ProcessBatch', batchId, JSON.stringify(event));
     console.log(`Fabric Transaction Successful: ProcessBatch for ${batchId}`);
   } catch (err) {
     console.error('Fabric transaction failed (processor)', err);
     return res.status(500).json({ ok: false, error: 'Blockchain transaction failed' });
   }
 
-  res.json({ ok: true, event });
+  res.json({ ok: true, event, blockchainProof: txResponse.proof });
 });
 
 // ---------- Lab ----------
@@ -371,15 +379,17 @@ app.post('/api/lab/upload-report', authRole(['lab']), upload.single('file'), asy
   };
 
   // ---------- Real On-chain Fabric txn (Lab) ----------
+  let txResponse;
   try {
-    await fabricGateway.invokeTransaction(req.user.fabricIdentity, req.user.organizationId, 'AddLabTest', batchId, JSON.stringify(event));
+    event.payloadHash = crypto.createHash('sha256').update(JSON.stringify(event)).digest('hex');
+    txResponse = await fabricGateway.invokeTransaction(req.user.fabricIdentity, req.user.organizationId, 'AddLabTest', batchId, JSON.stringify(event));
     console.log(`Fabric Transaction Successful: AddLabTest for ${batchId}`);
   } catch (err) {
     console.error('Fabric transaction failed (lab)', err);
     return res.status(500).json({ ok: false, error: 'Blockchain transaction failed' });
   }
 
-  res.json({ ok: true, event });
+  res.json({ ok: true, event, blockchainProof: txResponse.proof });
 });
 
 // ---------- Consumer ----------

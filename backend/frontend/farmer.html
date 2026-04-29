@@ -264,14 +264,15 @@
     // Auth gate (matches your backend: /login route serves login.html)
     (async function initApp() {
       const token = localStorage.getItem('token');
-      if (!token) {
+      const role = localStorage.getItem('role');
+      if (!token || role !== 'farmer') {
         window.location.href = '/login.html';
         return;
       }
 
       try {
         const res = await fetch(CONFIG.API_BASE_URL + '/api/profile', {
-          headers: {  'Authorization': `Bearer ${token}`,  }
+          headers: { 'Authorization': `Bearer ${token}`, }
         });
         const data = await res.json();
 
@@ -446,7 +447,7 @@
 
         const resp = await fetch(CONFIG.API_BASE_URL + '/api/farmer/add-herb', {
           method: 'POST',
-          headers: {  ...authHeader() }, // Do not set Content-Type manually for FormData
+          headers: { ...authHeader() }, // Do not set Content-Type manually for FormData
           body: fd
         });
         const data = await resp.json();

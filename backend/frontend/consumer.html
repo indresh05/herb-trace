@@ -1,29 +1,115 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>Consumer View — HerbTrace</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f1f8e9; margin: 0; }
-    nav { background: #2E8B57; color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
-    .nav-container .logo { font-weight: bold; font-size: 1.5em; }
-    .nav-links { list-style: none; display: flex; gap: 15px; margin: 0; }
-    .nav-links li a { color: white; text-decoration: none; font-weight: 500; }
-    .nav-links li a:hover { text-decoration: underline; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f1f8e9;
+      margin: 0;
+    }
 
-    .container { max-width: 900px; margin: 30px auto; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-    h2 { color: #2E8B57; text-align: center; margin-bottom: 25px; }
-    .form-group { margin-bottom: 15px; }
-    .form-group input { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 1em; box-sizing: border-box; }
-    button { padding: 12px 20px; background: #2E8B57; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-    button:hover { background: #246b46; }
-    .batch-card { border-left: 4px solid #2E8B57; padding: 15px; margin: 15px 0; border-radius: 6px; background: #f7f9fb; }
-    .muted { color: #666; font-size: 0.9em; }
-    a.link { color: #2E8B57; text-decoration: none; }
-    a.link:hover { text-decoration: underline; }
+    nav {
+      background: #2E8B57;
+      color: white;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-container .logo {
+      font-weight: bold;
+      font-size: 1.5em;
+    }
+
+    .nav-links {
+      list-style: none;
+      display: flex;
+      gap: 15px;
+      margin: 0;
+    }
+
+    .nav-links li a {
+      color: white;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .nav-links li a:hover {
+      text-decoration: underline;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 30px auto;
+      padding: 20px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      color: #2E8B57;
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 1em;
+      box-sizing: border-box;
+    }
+
+    button {
+      padding: 12px 20px;
+      background: #2E8B57;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #246b46;
+    }
+
+    .batch-card {
+      border-left: 4px solid #2E8B57;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 6px;
+      background: #f7f9fb;
+    }
+
+    .muted {
+      color: #666;
+      font-size: 0.9em;
+    }
+
+    a.link {
+      color: #2E8B57;
+      text-decoration: none;
+    }
+
+    a.link:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
+
 <body>
   <nav>
     <div class="nav-container">
@@ -60,25 +146,27 @@
       const res = await fetch(CONFIG.API_BASE_URL + `/api/consumer/view?batchId=${batchId}`);
       const data = await res.json();
 
-      if (data.ok && data.events.length > 0) {
+      if (data.ok && data.events && data.events.length > 0) {
         data.events.forEach(e => {
           const div = document.createElement('div');
           div.className = 'batch-card';
 
+          let internalHtml = '';
+
           if (e.type === 'collection') {
-            div.innerHTML = `<strong>Collection</strong> — <span class="muted">by ${e.collector || e.farmer || 'unknown'} at ${new Date(e.timestamp).toLocaleString()}</span><br>
+            internalHtml = `<strong>Collection</strong> — <span class="muted">by ${e.collector || e.farmer || 'unknown'} at ${new Date(e.timestamp).toLocaleString()}</span><br>
                              Species: ${e.species} | Quality: ${e.quality}<br>
                              ${e.lat && e.long ? `Location: (${e.lat}, ${e.long})<br>` : ''}
                              ${e.imageLink ? `Image: <a class="link" target="_blank" href="${e.imageLink}">View</a><br>` : ''}
                              Status: ${e.status || 'N/A'}`;
           } else if (e.type === 'processing') {
-            div.innerHTML = `<strong>Processing</strong> — <span class="muted">by ${e.processor || 'processor'} at ${new Date(e.timestamp).toLocaleString()}</span><br>
+            internalHtml = `<strong>Processing</strong> — <span class="muted">by ${e.processor || 'processor'} at ${new Date(e.timestamp).toLocaleString()}</span><br>
                              Facility: ${e.facility} (${e.facilityLocation || 'N/A'})<br>
                              Manager: ${e.managerName}<br>
                              Process Type: ${e.processType}<br>
                              Status: ${e.status || 'N/A'}`;
           } else if (e.type === 'quality') {
-            div.innerHTML = `<strong>Lab Test</strong> — <span class="muted">by ${e.lab || e.labName || 'lab'} at ${new Date(e.timestamp).toLocaleString()}</span><br>
+            internalHtml = `<strong>Lab Test</strong> — <span class="muted">by ${e.lab || e.labName || 'lab'} at ${new Date(e.timestamp).toLocaleString()}</span><br>
                              Lab: ${e.labName || e.lab}<br>
                              Manager: ${e.labManagerName || 'N/A'}<br>
                              Result: ${e.resultStatus}<br>
@@ -86,6 +174,32 @@
                              Status: ${e.status || 'N/A'}`;
           }
 
+          if (e.blockchainProof) {
+            internalHtml += `
+              <div style="margin-top: 15px; padding: 12px; background: #eaf1eb; border: 1px solid #c8dfce; border-radius: 6px;">
+                <h4 style="margin: 0 0 10px 0; color: #1e5a38;">🔐 Blockchain Proof</h4>
+                <div style="font-family: monospace; font-size: 0.85em; color: #333; word-break: break-all;">
+                  <strong>TxID:</strong> ${e.blockchainProof.txId}<br>
+                  <strong>Block Number:</strong> ${e.blockchainProof.blockNumber}<br>
+                  <strong>Timestamp:</strong> ${e.blockchainProof.timestamp}<br>
+                  <strong>Channel:</strong> mychannel<br>
+                  <strong>Chaincode:</strong> ${e.blockchainProof.chaincodeName}<br>
+                  <strong>Hash:</strong> ${e.payloadHash || 'N/A'}<br>
+                  <strong>Endorsed By:</strong> 
+                  <ul style="margin: 5px 0 10px 0; padding-left: 20px;">
+                    ${e.blockchainProof.endorsingOrgs.map(org => `<li>✔ ${org}</li>`).join('')}
+                  </ul>
+                  <a href="http://localhost:8080/#/channels/mychannel/transactions/${e.blockchainProof.txId}" 
+                     target="_blank" 
+                     style="display: inline-block; padding: 8px 12px; background: #1e5a38; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; margin-top: 5px;">
+                    🔎 View on Explorer
+                  </a>
+                </div>
+              </div>
+            `;
+          }
+
+          div.innerHTML = internalHtml;
           container.appendChild(div);
         });
       } else {
@@ -94,4 +208,5 @@
     }
   </script>
 </body>
+
 </html>

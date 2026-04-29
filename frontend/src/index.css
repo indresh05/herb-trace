@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+@theme {
+  --color-herb-deep: #0F3D2E;
+  --color-herb-leaf: #2E7D32;
+  --color-herb-turmeric: #D89B1D;
+  --color-herb-cream: #F8F5EC;
+  --color-herb-charcoal: #1F2933;
+}
+
+@layer base {
+  body {
+    @apply bg-herb-cream text-herb-charcoal antialiased;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-xl rounded-2xl;
+  }
+
+  .btn-primary {
+    @apply bg-herb-deep text-white px-6 py-3 rounded-lg font-semibold hover:bg-herb-leaf transition-all duration-300 shadow-lg hover:shadow-herb-leaf/20;
+  }
+
+  .btn-secondary {
+    @apply bg-white text-herb-deep border-2 border-herb-deep px-6 py-3 rounded-lg font-semibold hover:bg-herb-cream transition-all duration-300;
+  }
+}

@@ -39,7 +39,7 @@ async function getContract(userIdentity, userOrgMsp) {
         // Get the contract from the network.
         const contract = network.getContract(chaincodeName);
 
-        return { contract, gateway };
+        return { contract, gateway, network };
     } catch (error) {
         console.error(`Failed to connect to gateway: ${error}`);
         return null; // Return null on failure so server can catch it
@@ -52,15 +52,50 @@ async function invokeTransaction(userIdentity, userOrg, fnc, ...args) {
         contractObj = await getContract(userIdentity, userOrg);
         if (!contractObj) throw new Error(`Could not get Fabric Contract for ${userIdentity}`);
 
-        const { contract, gateway } = contractObj;
+        const { contract, gateway, network } = contractObj;
 
         console.log(`Submitting transaction: ${fnc} for user ${userIdentity} with args: ${args.join(',')}`);
-        const result = await contract.submitTransaction(fnc, ...args);
-        console.log('Transaction has been submitted');
+        const transaction = contract.createTransaction(fnc);
+        const txId = transaction.getTransactionId();
+        const resultBytes = await transaction.submit(...args);
+        console.log('Transaction has been submitted. TxID:', txId);
+
+        let blockchainProof = null;
+        try {
+            const qscc = network.getContract('qscc');
+            const blockBuffer = await qscc.evaluateTransaction('GetBlockByTxID', channelName, txId);
+            const { BlockDecoder } = require('fabric-common');
+            const block = BlockDecoder.decode(blockBuffer);
+
+            const txEnvelope = block.data.data.find(d => d.payload.header.channel_header.tx_id === txId);
+            if (txEnvelope) {
+                const action = txEnvelope.payload.data.actions[0].payload.action;
+                blockchainProof = {
+                    txId: txId,
+                    blockNumber: block.header.number.toString(),
+                    timestamp: txEnvelope.payload.header.channel_header.timestamp,
+                    endorsingOrgs: action.endorsements.map(e => e.endorser.mspid),
+                    chaincodeName: txEnvelope.payload.data.actions[0].payload.chaincode_proposal_payload.input.chaincode_spec.chaincode_id.name
+                };
+
+                // Store proof in world state (args[0] is the batchId)
+                if (fnc !== 'UpdateBatchProof' && args[0]) {
+                    console.log(`Submitting UpdateBatchProof for batch ${args[0]}...`);
+                    await contract.submitTransaction('UpdateBatchProof', args[0], JSON.stringify(blockchainProof));
+                    console.log(`UpdateBatchProof successful for batch ${args[0]}`);
+                }
+            }
+        } catch (err) {
+            console.error('Failed to extract or store blockchain proof:', err.message);
+        }
 
         // Disconnect from the gateway
         gateway.disconnect();
-        return result.toString();
+
+        return {
+            result: resultBytes.toString(),
+            proof: blockchainProof
+        };
     } catch (error) {
         if (contractObj && contractObj.gateway) contractObj.gateway.disconnect();
         console.error(`Failed to submit transaction: ${error}`);

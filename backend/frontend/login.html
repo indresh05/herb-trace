@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>Login — HerbTrace</title>
@@ -22,10 +23,28 @@
       justify-content: space-between;
       align-items: center;
     }
-    .nav-container .logo { font-weight: bold; font-size: 1.5em; }
-    .nav-links { list-style: none; display: flex; gap: 15px; margin: 0; }
-    .nav-links li a { color: white; text-decoration: none; font-weight: 500; }
-    .nav-links li a:hover { text-decoration: underline; }
+
+    .nav-container .logo {
+      font-weight: bold;
+      font-size: 1.5em;
+    }
+
+    .nav-links {
+      list-style: none;
+      display: flex;
+      gap: 15px;
+      margin: 0;
+    }
+
+    .nav-links li a {
+      color: white;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .nav-links li a:hover {
+      text-decoration: underline;
+    }
 
     .login-container {
       max-width: 400px;
@@ -33,7 +52,7 @@
       padding: 40px;
       background: #ffffff;
       border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
       text-align: center;
     }
 
@@ -49,7 +68,8 @@
       margin-bottom: 20px;
     }
 
-    .login-container input, .login-container select {
+    .login-container input,
+    .login-container select {
       width: 100%;
       padding: 12px;
       margin: 12px 0;
@@ -71,6 +91,7 @@
       cursor: pointer;
       transition: 0.3s;
     }
+
     .login-container button:hover {
       background: #246b46;
     }
@@ -97,6 +118,7 @@
     }
   </style>
 </head>
+
 <body>
   <nav>
     <div class="nav-container">
@@ -134,11 +156,12 @@
     <!-- Auth Fields -->
     <input type="text" id="username" placeholder="Username">
     <input type="password" id="password" placeholder="Password">
-    
+
     <button id="submitBtn" onclick="submitForm()">Login</button>
-    
+
     <div style="margin-top: 20px; font-size: 0.9em;">
-      <a href="#" id="toggleAuthMode" style="color: #2E8B57; text-decoration: none; font-weight: 500;" onclick="toggleMode(event)">Need an account? Register</a>
+      <a href="#" id="toggleAuthMode" style="color: #2E8B57; text-decoration: none; font-weight: 500;"
+        onclick="toggleMode(event)">Need an account? Register</a>
     </div>
   </div>
 
@@ -153,7 +176,7 @@
     function toggleMode(e) {
       e.preventDefault();
       isLoginMode = !isLoginMode;
-      
+
       document.getElementById('formTitle').textContent = isLoginMode ? 'Login to HerbTrace' : 'Register Account';
       document.getElementById('formSubtitle').textContent = isLoginMode ? 'Select your role and enter credentials to access your dashboard.' : 'Deploy a new enterprise blockchain identity.';
       document.getElementById('submitBtn').textContent = isLoginMode ? 'Login' : 'Register';
@@ -161,6 +184,22 @@
       document.getElementById('registerFields').style.display = isLoginMode ? 'none' : 'block';
       document.getElementById('error').textContent = '';
       document.getElementById('successMsg').textContent = '';
+
+      const roleSelect = document.getElementById('role');
+      if (!isLoginMode) {
+        // Enable all roles for registration
+        Array.from(roleSelect.options).forEach(opt => {
+          opt.disabled = false;
+          opt.hidden = false;
+        });
+        roleSelect.value = 'farmer';
+      } else {
+        Array.from(roleSelect.options).forEach(opt => {
+          opt.disabled = false;
+          opt.hidden = false;
+        });
+        roleSelect.value = '';
+      }
     }
 
     async function submitForm() {
@@ -192,7 +231,7 @@
       try {
         const res = await fetch(CONFIG.API_BASE_URL + '/api/register', {
           method: 'POST',
-          headers: {  'Content-Type':'application/json' },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password, role, fullName, location, facilityName })
         });
 
@@ -214,7 +253,7 @@
       const password = document.getElementById('password').value;
       const role = document.getElementById('role').value;
       const errorDiv = document.getElementById('error');
-      
+
       errorDiv.textContent = '';
 
       if (!role) {
@@ -225,7 +264,7 @@
       try {
         const res = await fetch(CONFIG.API_BASE_URL + '/api/login', {
           method: 'POST',
-          headers: {  'Content-Type':'application/json' },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password })
         });
 
@@ -249,4 +288,5 @@
     }
   </script>
 </body>
+
 </html>
