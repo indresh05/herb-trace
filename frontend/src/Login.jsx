@@ -43,6 +43,7 @@ const Login = () => {
           }
           localStorage.setItem('token', res.data.token);
           localStorage.setItem('role', res.data.role);
+          localStorage.setItem('username', username);
           navigate('/dashboard');
         }
       } else {

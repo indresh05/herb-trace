@@ -10,6 +10,8 @@ import { API_BASE_URL } from './apiConfig';
 import Layout from './components/Layout';
 import ProcessModal from './components/ProcessModal';
 import LabModal from './components/LabModal';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const StatCard = ({ title, value, icon: Icon, color }) => (
   <div className="glass-card p-8 group hover:scale-[1.02] transition-all duration-300">
@@ -34,6 +36,8 @@ const Dashboard = () => {
   const [selectedBatch, setSelectedBatch] = useState(null);
   const [isProcessModalOpen, setIsProcessModalOpen] = useState(false);
   const [isLabModalOpen, setIsLabModalOpen] = useState(false);
+  const [stats, setStats] = useState({ totalBatches: 0, verifiedReports: 0, pendingChecks: 0, flaggedIssues: 0 });
+  const [activity, setActivity] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -62,6 +66,8 @@ const Dashboard = () => {
       try {
         const batchRes = await axios.get(`${API_BASE_URL}${endpoint}`, config);
         setBatches(batchRes.data.pending || batchRes.data.batches || []);
+        if (batchRes.data.stats) setStats(batchRes.data.stats);
+        if (batchRes.data.activity) setActivity(batchRes.data.activity);
       } catch (e) { console.warn("Failed to fetch batches", e); }
       
       setLoading(false);
@@ -69,6 +75,54 @@ const Dashboard = () => {
       console.error(err);
       if (err.response?.status === 401) navigate('/login');
       setLoading(false);
+    }
+  };
+
+  const handleDownloadAudit = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get(`${API_BASE_URL}/api/dashboard/audit`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const doc = new jsPDF();
+      
+      // Header
+      doc.setFontSize(22);
+      doc.setTextColor(20, 54, 46); // herb-deep
+      doc.text('HerbTrace Enterprise Audit Report', 14, 20);
+      
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 28);
+      doc.text(`Organization: ${profile?.facilityName || 'N/A'}`, 14, 34);
+      doc.text(`User: ${profile?.fullName || 'N/A'}`, 14, 40);
+      
+      // Table
+      const tableColumn = ["Batch ID", "Species", "Origin", "Harvest Date", "Processor", "Quality", "Status"];
+      const tableRows = res.data.auditData.map(b => [
+        b.batchId,
+        b.species,
+        b.origin,
+        b.harvestDate,
+        b.processedAt,
+        b.qualityStatus,
+        b.currentStatus
+      ]);
+
+      autoTable(doc, {
+        startY: 50,
+        head: [tableColumn],
+        body: tableRows,
+        theme: 'grid',
+        headStyles: { fillColor: [20, 54, 46] },
+        alternateRowStyles: { fillColor: [245, 247, 244] }
+      });
+
+      doc.save(`HerbTrace_Audit_${new Date().getTime()}.pdf`);
+    } catch (err) {
+      console.error("Failed to generate PDF", err);
+      alert("Failed to generate audit report. Please try again.");
     }
   };
 
@@ -103,10 +157,10 @@ const Dashboard = () => {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
-          <StatCard title="Total Batches" value="124" icon={Layers} color="herb-deep" />
-          <StatCard title="Verified Reports" value="89" icon={CheckCircle} color="herb-leaf" />
-          <StatCard title="Pending Checks" value="12" icon={RefreshCw} color="herb-turmeric" />
-          <StatCard title="Flagged Issues" value="2" icon={AlertTriangle} color="red-500" />
+          <StatCard title="Total Batches" value={stats.totalBatches} icon={Layers} color="herb-deep" />
+          <StatCard title="Verified Reports" value={stats.verifiedReports} icon={CheckCircle} color="herb-leaf" />
+          <StatCard title="Pending Checks" value={stats.pendingChecks} icon={RefreshCw} color="herb-turmeric" />
+          <StatCard title="Flagged Issues" value={stats.flaggedIssues} icon={AlertTriangle} color="red-500" />
         </div>
 
         {/* Main Content Area */}
@@ -181,22 +235,25 @@ const Dashboard = () => {
                 <Activity className="w-5 h-5 text-herb-leaf" /> Network Activity
               </h3>
               <div className="space-y-8 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-herb-deep/5">
-                {[
-                  { user: 'farmer1', action: 'Uploaded Harvest Data', time: '2m ago', icon: Map },
-                  { user: 'lab1', action: 'Verified Batch B-102', time: '1h ago', icon: CheckCircle },
-                  { user: 'exporter', action: 'Approved Shipment', time: '3h ago', icon: Package },
-                  { user: 'processor', action: 'Started Cleaning', time: '5h ago', icon: RefreshCw },
-                ].map((act, i) => (
+                {activity.length > 0 ? activity.map((act, i) => (
                   <div key={i} className="flex gap-6 relative z-10">
                     <div className="bg-white border-2 border-herb-cream w-6 h-6 rounded-full flex items-center justify-center">
-                      <div className="w-2 h-2 bg-herb-leaf rounded-full" />
+                      <div className={`w-2 h-2 rounded-full ${
+                        act.type === 'collection' ? 'bg-herb-leaf' : act.type === 'processing' ? 'bg-herb-deep' : 'bg-herb-turmeric'
+                      }`} />
                     </div>
                     <div>
                       <p className="text-sm font-bold text-herb-deep">{act.action}</p>
-                      <p className="text-xs text-herb-charcoal/40 font-semibold uppercase tracking-wider">{act.user} &bull; {act.time}</p>
+                      <p className="text-xs text-herb-charcoal/40 font-semibold uppercase tracking-wider">
+                        {act.user} &bull; {new Date(act.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
                     </div>
                   </div>
-                ))}
+                )) : (
+                  <div className="text-herb-charcoal/30 text-xs font-bold text-center py-4">
+                    No recent activity
+                  </div>
+                )}
               </div>
             </div>
 
@@ -208,7 +265,10 @@ const Dashboard = () => {
               <p className="text-white/60 text-sm mb-8 leading-relaxed">
                 Generate a full compliance audit report for all batches processed this month.
               </p>
-              <button className="w-full bg-herb-turmeric text-herb-deep py-3 rounded-xl font-bold hover:bg-white transition-colors">
+              <button 
+                onClick={handleDownloadAudit}
+                className="w-full bg-herb-turmeric text-herb-deep py-3 rounded-xl font-bold hover:bg-white transition-colors"
+              >
                 Download PDF Audit
               </button>
             </div>

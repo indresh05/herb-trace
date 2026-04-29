@@ -239,17 +239,61 @@ app.post('/api/farmer/add-herb', authRole(['farmer']), upload.single('image'), a
   }
 });
 
+// ---------- Dashboard Data Aggregator ----------
+async function getDashboardData(identity, orgId) {
+  try {
+    const allBatchesJSON = await fabricGateway.evaluateTransaction(identity, orgId, 'GetAllBatches');
+    const allBatches = JSON.parse(allBatchesJSON);
+    
+    const stats = {
+      totalBatches: allBatches.length,
+      verifiedReports: 0,
+      pendingChecks: 0,
+      flaggedIssues: 0
+    };
+
+    const activity = [];
+
+    allBatches.forEach(b => {
+      const events = b.Record;
+      if (!events || events.length === 0) return;
+      
+      const latestEvent = events[events.length - 1];
+
+      if (latestEvent.type === 'quality') {
+        if (latestEvent.resultStatus === 'pass') stats.verifiedReports++;
+        else stats.flaggedIssues++;
+      }
+
+      if (latestEvent.status === 'pending' || latestEvent.status === 'processed') {
+        stats.pendingChecks++;
+      }
+
+      events.forEach(e => {
+        activity.push({
+          user: e.collector || e.processor || e.labName || 'System',
+          action: e.type === 'collection' ? 'Harvested Batch' : e.type === 'processing' ? 'Processed Batch' : 'Verified Batch',
+          time: e.timestamp,
+          type: e.type
+        });
+      });
+    });
+
+    activity.sort((a, b) => new Date(b.time) - new Date(a.time));
+    const recentActivity = activity.slice(0, 8);
+
+    return { allBatches, stats, activity: recentActivity };
+  } catch (err) {
+    console.error("Dashboard Aggregation Error:", err);
+    return { allBatches: [], stats: { totalBatches: 0, verifiedReports: 0, pendingChecks: 0, flaggedIssues: 0 }, activity: [] };
+  }
+}
+
 // ---------- Processor ----------
 app.get('/api/processor/dashboard', authRole(['processor']), async (req, res) => {
   try {
-    console.log(`[PROCESSOR] Fetching batches for ${req.user.username}...`);
-    const allBatchesJSON = await fabricGateway.evaluateTransaction(req.user.fabricIdentity, req.user.organizationId, 'GetAllBatches');
-    console.log(`[PROCESSOR] Raw JSON from chaincode:`, allBatchesJSON);
+    const { allBatches, stats, activity } = await getDashboardData(req.user.fabricIdentity, req.user.organizationId);
 
-    const allBatches = JSON.parse(allBatchesJSON);
-    console.log(`[PROCESSOR] Parsed events:`, allBatches.length);
-
-    // Filter for batches that have a collection event but NO processing event
     const pending = allBatches
       .map(b => b.Record)
       .filter(events => {
@@ -258,21 +302,20 @@ app.get('/api/processor/dashboard', authRole(['processor']), async (req, res) =>
         return hasCollection && !hasProcessing;
       })
       .map(events => {
-        // Flatten latest state for dashboard display
         const collectionEvent = events.find(e => e.type === 'collection');
         return {
           batchId: collectionEvent.batchId,
           species: collectionEvent.species,
           quality: collectionEvent.quality,
-          status: collectionEvent.status
+          status: collectionEvent.status,
+          location: collectionEvent.farmLocation
         }
       });
 
-    console.log(`[PROCESSOR] Filtered pending:`, pending);
-    res.json({ ok: true, pending });
+    res.json({ ok: true, pending, stats, activity });
   } catch (err) {
-    console.error('Failed to get processor dashboard batches:', err);
-    res.status(500).json({ ok: false, error: 'Failed to fetch batches', pending: [] });
+    console.error('Failed to get processor dashboard:', err);
+    res.status(500).json({ ok: false, error: 'Failed to fetch dashboard data' });
   }
 });
 
@@ -315,10 +358,8 @@ app.post('/api/processor/process', authRole(['processor']), async (req, res) => 
 // ---------- Lab ----------
 app.get('/api/lab/dashboard', authRole(['lab']), async (req, res) => {
   try {
-    const allBatchesJSON = await fabricGateway.evaluateTransaction(req.user.fabricIdentity, req.user.organizationId, 'GetAllBatches');
-    const allBatches = JSON.parse(allBatchesJSON);
+    const { allBatches, stats, activity } = await getDashboardData(req.user.fabricIdentity, req.user.organizationId);
 
-    // Filter for batches that have a processing event but NO quality event
     const pending = allBatches
       .map(b => b.Record)
       .filter(events => {
@@ -327,21 +368,79 @@ app.get('/api/lab/dashboard', authRole(['lab']), async (req, res) => {
         return hasProcessing && !hasQuality;
       })
       .map(events => {
-        // Flatten latest state for dashboard display
         const collectionEvent = events.find(e => e.type === 'collection');
         const processingEvent = events.find(e => e.type === 'processing');
         return {
           batchId: collectionEvent.batchId,
           species: collectionEvent.species,
-          status: processingEvent.status, // Should be 'processed'
-          processor: processingEvent.processor
+          status: processingEvent.status,
+          processor: processingEvent.processor,
+          location: processingEvent.facilityLocation
         }
       });
 
-    res.json({ ok: true, pending });
+    res.json({ ok: true, pending, stats, activity });
   } catch (err) {
-    console.error('Failed to get lab dashboard batches:', err);
-    res.status(500).json({ ok: false, error: 'Failed to fetch batches', pending: [] });
+    console.error('Failed to get lab dashboard:', err);
+    res.status(500).json({ ok: false, error: 'Failed to fetch dashboard data' });
+  }
+});
+
+// ---------- Farmer / Global Summary ----------
+app.get('/api/farmer/my-batches', authRole(['farmer', 'admin']), async (req, res) => {
+  try {
+    const { allBatches, stats, activity } = await getDashboardData(req.user.fabricIdentity, req.user.organizationId);
+    
+    const pending = allBatches
+      .map(b => b.Record)
+      .filter(events => {
+        if (req.user.role === 'admin') return true;
+        const collectionEvent = events.find(e => e.type === 'collection');
+        return collectionEvent && collectionEvent.collector === req.user.username;
+      })
+      .map(events => {
+        const collectionEvent = events.find(e => e.type === 'collection');
+        return {
+          batchId: collectionEvent.batchId,
+          species: collectionEvent.species,
+          status: events[events.length - 1].status,
+          location: collectionEvent.farmLocation
+        }
+      });
+
+    res.json({ ok: true, pending, stats, activity });
+  } catch (err) {
+    console.error('Failed to get farmer dashboard:', err);
+    res.status(500).json({ ok: false, error: 'Failed to fetch dashboard data' });
+  }
+});
+
+// ---------- Audit Report Data ----------
+app.get('/api/dashboard/audit', authRole(['farmer', 'processor', 'lab', 'admin']), async (req, res) => {
+  try {
+    const { allBatches } = await getDashboardData(req.user.fabricIdentity, req.user.organizationId);
+    
+    const auditData = allBatches.map(b => {
+      const events = b.Record;
+      const collection = events.find(e => e.type === 'collection');
+      const processing = events.find(e => e.type === 'processing');
+      const quality = events.find(e => e.type === 'quality');
+      
+      return {
+        batchId: b.Key,
+        species: collection?.species || 'N/A',
+        origin: collection?.farmLocation || 'N/A',
+        harvestDate: collection?.timestamp ? new Date(collection.timestamp).toLocaleDateString() : 'N/A',
+        processedAt: processing?.facility || 'Pending',
+        qualityStatus: quality?.resultStatus?.toUpperCase() || 'PENDING',
+        currentStatus: events[events.length - 1]?.status || 'Unknown'
+      };
+    });
+
+    res.json({ ok: true, auditData });
+  } catch (err) {
+    console.error('Audit fetch failed:', err);
+    res.status(500).json({ ok: false, error: 'Failed to fetch audit data' });
   }
 });
 
